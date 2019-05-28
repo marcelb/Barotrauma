@@ -266,9 +266,7 @@ namespace Barotrauma
         protected override void Initialize()
         {
             base.Initialize();
-
-            RequestGraphicsSettings();
-
+            
             ScissorTestEnable = new RasterizerState() { ScissorTestEnable = true };
 
             Hyper.ComponentModel.HyperTypeDescriptionProvider.Add(typeof(Character));
@@ -300,6 +298,8 @@ namespace Barotrauma
                 WaitForLanguageSelection = Config.ShowLanguageSelectionPrompt
             };
 
+            RequestGraphicsSettings();
+
             bool canLoadInSeparateThread = false;
 #if WINDOWS
             canLoadInSeparateThread = true;
@@ -312,6 +312,7 @@ namespace Barotrauma
             gameForm.Activated += new EventHandler(HandleFocus);
             gameForm.Deactivate += new EventHandler(HandleDefocus);
             if (WindowActive) { HandleFocus(null, null); }
+            gameForm.Activate();
 #endif
         }
 

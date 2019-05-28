@@ -261,6 +261,7 @@ namespace Barotrauma
                 ToolTip = TextManager.Get("EnableVSyncToolTip"),
                 OnSelected = (GUITickBox box) =>
                 {
+                    if (VSyncEnabled == box.Selected) return true;
                     VSyncEnabled = box.Selected;
                     GameMain.GraphicsDeviceManager.SynchronizeWithVerticalRetrace = VSyncEnabled;
                     GameMain.GraphicsDeviceManager.ApplyChanges();
