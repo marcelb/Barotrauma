@@ -266,7 +266,10 @@ namespace Barotrauma
         protected override void Initialize()
         {
             base.Initialize();
-            
+
+            DisplayWidth = GraphicsDevice.DisplayMode.Width;
+            DisplayHeight = GraphicsDevice.DisplayMode.Height;
+
             ScissorTestEnable = new RasterizerState() { ScissorTestEnable = true };
 
             Hyper.ComponentModel.HyperTypeDescriptionProvider.Add(typeof(Character));
