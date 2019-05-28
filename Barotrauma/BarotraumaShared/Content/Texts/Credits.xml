@@ -175,7 +175,7 @@
 
   <spacing relativeheight="0.05"/>
   
-  <GridText font="Font" alignment="CenterLeft" color="150,150,150,255">Aleksandr Varnavskii,Alfred_Donovan,Armadillo Sloth,"Bill Combs",BillSoFat,Borna "Blue" Aberle,boynedmaster “boratboy12”,Caleb Yu,chesse20,Database,DataCrusader,David "Ol Stinky" Hockenbury,Eduardo "Chiko" Valenzuela,etet2,Fabevil,Faerdan,Garrett Brown,Glitch,Gramstaal,hubismal,Irontaco,JJRcop,Just James,Landon Strik,Mark Jarjour,Nathan "MR. NAIL BRAIN" S.,Nilanth Animosus,Pugie,Redeloper “rico6822”,Robert Sloan,Samuel Hammersberg,Sebastian Broberg,shoter,Sputnik,Trialtrex21,ursinewalrus,>Weebyxanide Vendor,Zealan</GridText>
+  <GridText font="Font" alignment="CenterLeft" color="150,150,150,255">Aleksandr Varnavskii,Alfred_Donovan,Armadillo Sloth,"Bill Combs",BillSoFat,Borna "Blue" Aberle,boynedmaster “boratboy12”,Caleb Yu,chesse20,Database,DataCrusader,David "Ol Stinky" Hockenbury,Eduardo "Chiko" Valenzuela,etet2,Fabevil,Faerdan,Garrett Brown,Glitch,Gramstaal,hubismal,Irontaco,JJRcop,Just James,Landon Strik,Mark Jarjour,Nathan "MR. NAIL BRAIN" S.,Nilanth Animosus,Pugie,Redeloper “rico6822”,Robert Sloan,Samuel Hammersberg,Sebastian Broberg,shoter,Sputnik,Trialtrex21,ursinewalrus,Weebyxanide Vendor,Zealan</GridText>
 
   <spacing relativeheight="0.2"/>
 
@@ -243,6 +243,7 @@
   <Text font="VideoTitleFont" color="255,255,255,255" alignment="CenterLeft">Ez is particularly thankful to</Text>
   <Text font="Font" color="150,150,150,255" alignment="CenterLeft">Marianna Jämsen, for putting up with the long hours and the frequently absent husband during this production, the hard times were easier because you were there.</Text>
   <Text font="Font" color="150,150,150,255" alignment="CenterLeft">The Pegasus team @ Next Games for the hospitality and inspiration.</Text>
+  <Text font="Font" color="150,150,150,255" alignment="CenterLeft">The fantastic people from Daedalic, AtomicTorch Studio, Caligari Games, Indoor Astronaut, Kong Orange, and Unfrozen for the company and companionship during our American adventure.</Text>  
   <Text font="Font" color="150,150,150,255" alignment="CenterLeft">Mikko Tyni for the rather good advice regarding certain beer related things.</Text>
 
   <spacing relativeheight="0.05"/>

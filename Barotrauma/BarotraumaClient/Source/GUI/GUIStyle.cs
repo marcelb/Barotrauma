@@ -118,27 +118,27 @@ namespace Barotrauma
                 switch (subElement.Name.ToString().ToLowerInvariant())
                 {
                     case "font":
-                        if (Font == null) { continue; }
+                        if (Font == null) break;
                         Font.Size = GetFontSize(subElement);
                         break;
                     case "smallfont":
-                        if (SmallFont == null) { continue; }
+                        if (SmallFont == null) break;
                         SmallFont.Size = GetFontSize(subElement);
                         break;
                     case "largefont":
-                        if (LargeFont == null) { continue; }
+                        if (LargeFont == null) break;
                         LargeFont.Size = GetFontSize(subElement);
                         break;
                     case "objectivetitle":
-                        if (ObjectiveTitleFont == null) { continue; }
+                        if (ObjectiveTitleFont == null) break;
                         ObjectiveTitleFont.Size = GetFontSize(subElement);
                         break;
                     case "objectivename":
-                        if (ObjectiveNameFont == null) { continue; }
+                        if (ObjectiveNameFont == null) break;
                         ObjectiveNameFont.Size = GetFontSize(subElement);
                         break;
                     case "videotitle":
-                        if (VideoTitleFont == null) { continue; }
+                        if (VideoTitleFont == null) break;
                         VideoTitleFont.Size = GetFontSize(subElement);
                         break;
                 }
