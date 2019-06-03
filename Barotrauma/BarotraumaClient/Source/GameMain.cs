@@ -217,7 +217,7 @@ namespace Barotrauma
 #endif
         }
 
-        private void ApplyGraphicsSettings()
+        private void ApplyGraphicsSettings(int recursionDepth=0)
         {
 #if !OSX
             if (Config.WindowMode == WindowMode.Fullscreen &&
@@ -236,26 +236,35 @@ namespace Barotrauma
 
             GraphicsWidth = Config.GraphicsWidth;
             GraphicsHeight = Config.GraphicsHeight;
+            Viewport newViewport = new Viewport(0, 0, GraphicsWidth, GraphicsHeight);
+            GraphicsDevice.Viewport = newViewport;
 
             GraphicsDeviceManager.GraphicsProfile = GraphicsProfile.Reach;
             GraphicsDeviceManager.PreferredBackBufferFormat = SurfaceFormat.Color;
             GraphicsDeviceManager.PreferMultiSampling = false;
             GraphicsDeviceManager.SynchronizeWithVerticalRetrace = Config.VSyncEnabled;
-            GraphicsDeviceManager.PreferredBackBufferWidth = GraphicsWidth;
-            GraphicsDeviceManager.PreferredBackBufferHeight = GraphicsHeight;
             SetWindowMode(Config.WindowMode);
             GraphicsDeviceManager.ApplyChanges();
 
             defaultViewport = GraphicsDevice.Viewport;
 
             OnResolutionChanged?.Invoke();
+
+#if OSX
+            //this is a hack that might fix the viewport on macos
+            if (recursionDepth==0)
+            {
+                Thread.Sleep(10);
+                ApplyGraphicsSettings(1);
+            }
+#endif
         }
 
         private void SetWindowMode(WindowMode windowMode)
         {
             WindowMode = windowMode;
-            GraphicsDeviceManager.HardwareModeSwitch = Config.WindowMode != WindowMode.BorderlessWindowed;
-            GraphicsDeviceManager.IsFullScreen = Config.WindowMode == WindowMode.Fullscreen || Config.WindowMode == WindowMode.BorderlessWindowed;
+            GraphicsDeviceManager.HardwareModeSwitch = WindowMode != WindowMode.BorderlessWindowed;
+            GraphicsDeviceManager.IsFullScreen = WindowMode == WindowMode.Fullscreen || WindowMode == WindowMode.BorderlessWindowed;
             Window.IsBorderless = !GraphicsDeviceManager.HardwareModeSwitch;
 
             GraphicsDeviceManager.PreferredBackBufferWidth = GraphicsWidth;

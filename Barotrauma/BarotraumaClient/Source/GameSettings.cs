@@ -245,6 +245,7 @@ namespace Barotrauma
                 else
                 {
                     resolutionDD.ButtonEnabled = true;
+                    GameMain.Instance.RequestGraphicsSettings();
                 }
                 return true;
             };
