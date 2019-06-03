@@ -232,7 +232,16 @@ namespace Barotrauma
                     "", style: "ItemCategory" + category.ToString())
                 {
                     UserData = category,
-                    OnClicked = (btn, userdata) => { FilterStoreItems((MapEntityCategory)userdata, searchBox.Text); return true; }
+                    OnClicked = (btn, userdata) => 
+                    {
+                        MapEntityCategory newCategory = (MapEntityCategory)userdata;
+                        if (newCategory != selectedItemCategory)
+                        {
+                            searchBox.Text = ""; 
+                        }
+                        FilterStoreItems((MapEntityCategory)userdata, searchBox.Text);
+                        return true;
+                    }
                 };
                 itemCategoryButtons.Add(categoryButton);
 
@@ -488,10 +497,15 @@ namespace Barotrauma
             {
                 //refresh store view
                 FillStoreItemList();
-                FilterStoreItems(MapEntityCategory.Equipment, searchBox.Text);
-            }            
+
+                MapEntityCategory? category = null;
+                //only select a specific category if the search box is empty
+                //(items from all categories are shown when searching)
+                if (string.IsNullOrEmpty(searchBox.Text)) { category = selectedItemCategory; }
+                FilterStoreItems(category, searchBox.Text);
+            }
         }
-        
+
         private void DrawMap(SpriteBatch spriteBatch, GUICustomComponent mapContainer)
         {
             GameMain.GameSession?.Map?.Draw(spriteBatch, mapContainer);

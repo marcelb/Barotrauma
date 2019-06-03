@@ -92,8 +92,25 @@ namespace Barotrauma
 
         public static GameSettings Config;
 
+#if LINUX
         public static int DisplayWidth { get; private set; }
         public static int DisplayHeight { get; private set; }
+#else
+        public static int DisplayWidth
+        {
+            get
+            {
+                return GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+            }
+        }
+        public static int DisplayHeight
+        {
+            get
+            {
+                return GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            }
+        }
+#endif
 
         private CoroutineHandle loadingCoroutine;
         private bool hasLoaded;
@@ -162,14 +179,7 @@ namespace Barotrauma
 
         public GameMain()
         {
-/*#if !DEBUG && OSX
-            // Use a separate path for content that's editable due to macOS's .app bundles crashing when edited during runtime
-            string macPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library/Barotrauma");
-            Directory.SetCurrentDirectory(macPath);
-            Content.RootDirectory = macPath + "/Content";
-#else*/
             Content.RootDirectory = "Content";
-/*#endif*/
 
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
 
@@ -267,8 +277,10 @@ namespace Barotrauma
         {
             base.Initialize();
 
+#if LINUX
             DisplayWidth = GraphicsDevice.DisplayMode.Width;
             DisplayHeight = GraphicsDevice.DisplayMode.Height;
+#endif
 
             ScissorTestEnable = new RasterizerState() { ScissorTestEnable = true };
 
@@ -308,7 +320,7 @@ namespace Barotrauma
             canLoadInSeparateThread = true;
 #endif
 
-            loadingCoroutine = CoroutineManager.StartCoroutine(Load(canLoadInSeparateThread), "", canLoadInSeparateThread);
+            loadingCoroutine = CoroutineManager.StartCoroutine(Load(canLoadInSeparateThread), "Load", canLoadInSeparateThread);
 
 #if WINDOWS
             var gameForm = (System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(Window.Handle);
@@ -606,7 +618,9 @@ namespace Barotrauma
         /// </summary>
         protected override void UnloadContent()
         {
+            CoroutineManager.StopCoroutines("Load");
             Video.Close();
+            VoipCapture.Instance?.Dispose();
             SoundManager?.Dispose();
         }
 
@@ -680,7 +694,7 @@ namespace Barotrauma
                     // -> no pause caused by leftover time in the accumulator when starting a new shift
                     GameMain.ResetFrameTime();
 
-                    if (TitleScreen.LoadState >= 100.0f &&
+                    if (TitleScreen.LoadState >= 100.0f && !TitleScreen.PlayingSplashScreen &&
                         (!waitForKeyHit || ((PlayerInput.GetKeyboardState.GetPressedKeys().Length > 0 || PlayerInput.LeftButtonClicked()) && WindowActive)))
                     {
                         loadingScreenOpen = false;
