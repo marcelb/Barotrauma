@@ -1045,13 +1045,18 @@ namespace Barotrauma
                 GameMain.Instance.RequestGraphicsSettings();
             }
 
+#if OSX
+                ResetSettingsFrame();
+                CreateSettingsFrame(Tab.Graphics);
+#endif
+
             if (GameMain.GraphicsWidth != GameMain.Config.GraphicsWidth || GameMain.GraphicsHeight != GameMain.Config.GraphicsHeight)
             {
 #if OSX
                 if (GameMain.Config.WindowMode != WindowMode.BorderlessWindowed)
-                {
+                {              
 #endif
-                new GUIMessageBox(TextManager.Get("RestartRequiredLabel"), TextManager.Get("RestartRequiredResolution"));
+                    new GUIMessageBox(TextManager.Get("RestartRequiredLabel"), TextManager.Get("RestartRequiredResolution"));
 #if OSX
                 }
 #endif
