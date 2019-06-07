@@ -92,6 +92,26 @@ namespace Barotrauma
 
         public static GameSettings Config;
 
+#if LINUX
+        public static int DisplayWidth { get; private set; }
+        public static int DisplayHeight { get; private set; }
+#else
+        public static int DisplayWidth
+        {
+            get
+            {
+                return GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+            }
+        }
+        public static int DisplayHeight
+        {
+            get
+            {
+                return GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            }
+        }
+#endif
+
         private CoroutineHandle loadingCoroutine;
         private bool hasLoaded;
 
@@ -162,6 +182,10 @@ namespace Barotrauma
             Content.RootDirectory = "Content";
 
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
+            GraphicsDeviceManager.PreferredBackBufferWidth = 800;
+            GraphicsDeviceManager.PreferredBackBufferHeight = 600;
+            GraphicsDeviceManager.IsFullScreen = false;
+            GraphicsDeviceManager.HardwareModeSwitch = false;
 
             Window.Title = "Barotrauma";
 
@@ -185,8 +209,35 @@ namespace Barotrauma
             FarseerPhysics.Settings.PositionIterations = 1;
         }
 
-        public void ApplyGraphicsSettings()
+        public void RequestGraphicsSettings()
         {
+#if WINDOWS
+            if (WindowActive)
+            {
+#endif
+                ApplyGraphicsSettings();
+#if WINDOWS
+            }
+#endif
+        }
+
+        private void ApplyGraphicsSettings(int recursionDepth=0)
+        {
+#if !OSX
+            if (Config.WindowMode == WindowMode.Fullscreen &&
+                GraphicsDeviceManager.IsFullScreen && !GraphicsDeviceManager.HardwareModeSwitch &&
+                (GraphicsDeviceManager.PreferredBackBufferWidth != Config.GraphicsWidth ||
+                GraphicsDeviceManager.PreferredBackBufferHeight != Config.GraphicsHeight))
+            {
+                DisplayMode minMode = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes.First(m => m.Format == SurfaceFormat.Color);
+                GraphicsDeviceManager.PreferredBackBufferWidth = minMode.Width;
+                GraphicsDeviceManager.PreferredBackBufferHeight = minMode.Height;
+                GraphicsDeviceManager.IsFullScreen = false;
+                GraphicsDeviceManager.ApplyChanges();
+                Thread.Sleep(100);
+            }
+#endif
+
             GraphicsWidth = Config.GraphicsWidth;
             GraphicsHeight = Config.GraphicsHeight;
             switch (Config.WindowMode)
@@ -200,28 +251,40 @@ namespace Barotrauma
                     GraphicsHeight = Math.Min(GraphicsDevice.DisplayMode.Height, GraphicsHeight);
                     break;
             }
+
+            Viewport newViewport = new Viewport(0, 0, GraphicsWidth, GraphicsHeight);
+            GraphicsDevice.Viewport = newViewport;
+
             GraphicsDeviceManager.GraphicsProfile = GraphicsProfile.Reach;
             GraphicsDeviceManager.PreferredBackBufferFormat = SurfaceFormat.Color;
             GraphicsDeviceManager.PreferMultiSampling = false;
             GraphicsDeviceManager.SynchronizeWithVerticalRetrace = Config.VSyncEnabled;
             SetWindowMode(Config.WindowMode);
+            GraphicsDeviceManager.ApplyChanges();
 
             defaultViewport = GraphicsDevice.Viewport;
 
             OnResolutionChanged?.Invoke();
+
+#if OSX
+            //this is a hack that might fix the viewport on macos
+            if (recursionDepth == 0)
+            {
+                Thread.Sleep(10);
+                ApplyGraphicsSettings(1);
+            }
+#endif
         }
 
-        public void SetWindowMode(WindowMode windowMode)
+        private void SetWindowMode(WindowMode windowMode)
         {
             WindowMode = windowMode;
-            GraphicsDeviceManager.HardwareModeSwitch = Config.WindowMode != WindowMode.BorderlessWindowed;
-            GraphicsDeviceManager.IsFullScreen = Config.WindowMode == WindowMode.Fullscreen || Config.WindowMode == WindowMode.BorderlessWindowed;
+            GraphicsDeviceManager.HardwareModeSwitch = WindowMode != WindowMode.BorderlessWindowed;
+            GraphicsDeviceManager.IsFullScreen = WindowMode == WindowMode.Fullscreen || WindowMode == WindowMode.BorderlessWindowed;
             Window.IsBorderless = !GraphicsDeviceManager.HardwareModeSwitch;
 
             GraphicsDeviceManager.PreferredBackBufferWidth = GraphicsWidth;
             GraphicsDeviceManager.PreferredBackBufferHeight = GraphicsHeight;
-
-            GraphicsDeviceManager.ApplyChanges();
         }
 
         public void ResetViewPort()
@@ -239,7 +302,10 @@ namespace Barotrauma
         {
             base.Initialize();
 
-            ApplyGraphicsSettings();
+#if LINUX
+            DisplayWidth = GraphicsDevice.DisplayMode.Width;
+            DisplayHeight = GraphicsDevice.DisplayMode.Height;
+#endif
 
             ScissorTestEnable = new RasterizerState() { ScissorTestEnable = true };
 
@@ -255,6 +321,8 @@ namespace Barotrauma
         /// </summary>
         protected override void LoadContent()
         {
+            GraphicsDeviceManager.ApplyChanges();
+
             GraphicsWidth = GraphicsDevice.Viewport.Width;
             GraphicsHeight = GraphicsDevice.Viewport.Height;
 
@@ -272,14 +340,54 @@ namespace Barotrauma
                 WaitForLanguageSelection = Config.ShowLanguageSelectionPrompt
             };
 
+            Thread.Sleep(100);
+            RequestGraphicsSettings();
+
             bool canLoadInSeparateThread = false;
 #if WINDOWS
             canLoadInSeparateThread = true;
 #endif
 
             loadingCoroutine = CoroutineManager.StartCoroutine(Load(canLoadInSeparateThread), "Load", canLoadInSeparateThread);
+
+#if WINDOWS
+            var gameForm = (System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(Window.Handle);
+            gameForm.Activated += new EventHandler(HandleFocus);
+            gameForm.Deactivate += new EventHandler(HandleDefocus);
+            if (WindowActive) { HandleFocus(null, null); }
+            gameForm.Activate();
+#endif
         }
-        
+
+#if WINDOWS
+        private void HandleFocus(object sender, EventArgs e)
+        {
+            CoroutineManager.StopCoroutines("FocusCoroutine");
+            CoroutineManager.StartCoroutine(FocusCoroutine(),"FocusCoroutine");
+        }
+
+        private IEnumerable<object> FocusCoroutine()
+        {
+            yield return new WaitForSeconds(0.01f);
+            ApplyGraphicsSettings();
+            yield return CoroutineStatus.Success;
+        }
+
+        private void HandleDefocus(object sender, EventArgs e)
+        {
+            CoroutineManager.StopCoroutines("FocusCoroutine");
+            if (GraphicsDeviceManager.IsFullScreen && !GraphicsDeviceManager.HardwareModeSwitch)
+            {
+                DisplayMode minMode = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes.First(m => m.Format == SurfaceFormat.Color);
+                GraphicsDeviceManager.PreferredBackBufferWidth = minMode.Width;
+                GraphicsDeviceManager.PreferredBackBufferHeight = minMode.Height;
+                GraphicsDeviceManager.IsFullScreen = false;
+                GraphicsDeviceManager.ApplyChanges();
+                Thread.Sleep(100);
+            }
+        }
+#endif
+
         private void InitUserStats()
         {
             if (GameSettings.ShowUserStatisticsPrompt)

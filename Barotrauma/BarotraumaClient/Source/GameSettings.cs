@@ -191,13 +191,14 @@ namespace Barotrauma
             foreach (DisplayMode mode in GraphicsAdapter.DefaultAdapter.SupportedDisplayModes)
             {
                 if (supportedDisplayModes.Any(m => m.Width == mode.Width && m.Height == mode.Height)) { continue; }
+                if (mode.Width < MinSupportedResolution.X || mode.Height < MinSupportedResolution.Y) { continue; }
 #if OSX
                 // Monogame currently doesn't support retina displays
                 // so we need to disable resolutions above the viewport size.
 
                 // In a bundled .app you just disable HiDPI in the info.plist
                 // but that's probably not gonna happen.
-                if (mode.Width > GameMain.Instance.GraphicsDevice.DisplayMode.Width || mode.Height > GameMain.Instance.GraphicsDevice.DisplayMode.Height) { continue; }
+                if (mode.Width > GameMain.DisplayWidth || mode.Height > GameMain.DisplayHeight) { continue; }
 #endif
                 supportedDisplayModes.Add(mode);
             }
@@ -205,15 +206,11 @@ namespace Barotrauma
             new GUITextBlock(new RectTransform(new Vector2(1.0f, 0.05f), leftColumn.RectTransform), TextManager.Get("Resolution"));
             var resolutionDD = new GUIDropDown(new RectTransform(new Vector2(1.0f, 0.05f), leftColumn.RectTransform), elementCount: supportedDisplayModes.Count)
             {
-                OnSelected = SelectResolution,
-#if !LINUX
-                ButtonEnabled = GameMain.Config.WindowMode == WindowMode.Windowed
-#endif
-        };
+                OnSelected = SelectResolution
+            };
 
             foreach (DisplayMode mode in supportedDisplayModes)
             {
-                if (mode.Width < MinSupportedResolution.X || mode.Height < MinSupportedResolution.Y) { continue; }
                 resolutionDD.AddItem(mode.Width + "x" + mode.Height, mode);
                 if (GraphicsWidth == mode.Width && GraphicsHeight == mode.Height) resolutionDD.SelectItem(mode);
             }
@@ -225,6 +222,33 @@ namespace Barotrauma
 
             new GUITextBlock(new RectTransform(new Vector2(1.0f, 0.05f), leftColumn.RectTransform), TextManager.Get("DisplayMode"));
             var displayModeDD = new GUIDropDown(new RectTransform(new Vector2(1.0f, 0.05f), leftColumn.RectTransform));
+
+            displayModeDD.OnSelected = (guiComponent, obj) =>
+            {
+                UnsavedSettings = true;
+                GameMain.Config.WindowMode = (WindowMode)guiComponent.UserData;
+                if (GameMain.Config.WindowMode == WindowMode.BorderlessWindowed)
+                {
+                    var displayModes = GraphicsAdapter.DefaultAdapter.SupportedDisplayModes.Where(
+                            m => m.Width == GameMain.DisplayWidth &&
+                                 m.Height == GameMain.DisplayHeight);
+                    if (displayModes.Any())
+                    {
+                        resolutionDD.SelectItem(displayModes.First());
+                    }
+                    else
+                    {
+                        resolutionDD.SelectItem(GraphicsAdapter.DefaultAdapter.SupportedDisplayModes.Last());
+                    }
+                    resolutionDD.ButtonEnabled = false;
+                }
+                else
+                {
+                    resolutionDD.ButtonEnabled = true;
+                    GameMain.Instance.RequestGraphicsSettings();
+                }
+                return true;
+            };
 
             displayModeDD.AddItem(TextManager.Get("Fullscreen"), WindowMode.Fullscreen);
             displayModeDD.AddItem(TextManager.Get("Windowed"), WindowMode.Windowed);
@@ -242,21 +266,13 @@ namespace Barotrauma
                 displayModeDD.SelectItem(GameMain.Config.WindowMode);
             }
 #endif
-            displayModeDD.OnSelected = (guiComponent, obj) =>
-            {
-                UnsavedSettings = true;
-                GameMain.Config.WindowMode = (WindowMode)guiComponent.UserData;
-#if !LINUX
-                resolutionDD.ButtonEnabled = GameMain.Config.WindowMode == WindowMode.Windowed;
-#endif
-                return true;
-            };
 
             GUITickBox vsyncTickBox = new GUITickBox(new RectTransform(tickBoxScale, leftColumn.RectTransform, scaleBasis: ScaleBasis.BothHeight), TextManager.Get("EnableVSync"))
             {
                 ToolTip = TextManager.Get("EnableVSyncToolTip"),
                 OnSelected = (GUITickBox box) =>
                 {
+                    if (VSyncEnabled == box.Selected) return true;
                     VSyncEnabled = box.Selected;
                     GameMain.GraphicsDeviceManager.SynchronizeWithVerticalRetrace = VSyncEnabled;
                     GameMain.GraphicsDeviceManager.ApplyChanges();
@@ -887,7 +903,7 @@ namespace Barotrauma
 
             GraphicsWidth = mode.Width;
             GraphicsHeight = mode.Height;
-            GameMain.Instance.ApplyGraphicsSettings();
+            GameMain.Instance.RequestGraphicsSettings();
             UnsavedSettings = true;
 
             return true;
@@ -1026,16 +1042,21 @@ namespace Barotrauma
 
             if (GameMain.WindowMode != GameMain.Config.WindowMode)
             {
-                GameMain.Instance.ApplyGraphicsSettings();
+                GameMain.Instance.RequestGraphicsSettings();
             }
+
+#if OSX
+                ResetSettingsFrame();
+                CreateSettingsFrame(Tab.Graphics);
+#endif
 
             if (GameMain.GraphicsWidth != GameMain.Config.GraphicsWidth || GameMain.GraphicsHeight != GameMain.Config.GraphicsHeight)
             {
 #if OSX
                 if (GameMain.Config.WindowMode != WindowMode.BorderlessWindowed)
-                {
+                {              
 #endif
-                new GUIMessageBox(TextManager.Get("RestartRequiredLabel"), TextManager.Get("RestartRequiredResolution"));
+                    new GUIMessageBox(TextManager.Get("RestartRequiredLabel"), TextManager.Get("RestartRequiredResolution"));
 #if OSX
                 }
 #endif
