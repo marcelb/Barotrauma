@@ -182,6 +182,10 @@ namespace Barotrauma
             Content.RootDirectory = "Content";
 
             GraphicsDeviceManager = new GraphicsDeviceManager(this);
+            GraphicsDeviceManager.PreferredBackBufferWidth = 800;
+            GraphicsDeviceManager.PreferredBackBufferHeight = 600;
+            GraphicsDeviceManager.IsFullScreen = false;
+            GraphicsDeviceManager.HardwareModeSwitch = false;
 
             Window.Title = "Barotrauma";
 
@@ -305,6 +309,8 @@ namespace Barotrauma
         /// </summary>
         protected override void LoadContent()
         {
+            GraphicsDeviceManager.ApplyChanges();
+
             GraphicsWidth = GraphicsDevice.Viewport.Width;
             GraphicsHeight = GraphicsDevice.Viewport.Height;
 
@@ -322,6 +328,7 @@ namespace Barotrauma
                 WaitForLanguageSelection = Config.ShowLanguageSelectionPrompt
             };
 
+            Thread.Sleep(100);
             RequestGraphicsSettings();
 
             bool canLoadInSeparateThread = false;
